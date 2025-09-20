@@ -2,6 +2,7 @@ from torch.nn.attention.flex_attention import flex_attention, create_block_mask
 import torch.nn as nn
 import torch
 
+
 class MultiHeadAttentionCombinedQKV(nn.Module):
     def __init__(
         self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False
@@ -58,6 +59,7 @@ class MultiHeadAttentionCombinedQKV(nn.Module):
         context_vec = self.proj(context_vec)
 
         return context_vec
+
 
 def causal(b, h, q_idx, kv_idx):
     return q_idx >= kv_idx
@@ -122,8 +124,11 @@ class MHAPyTorchFlexAttention(nn.Module):
 
         return context_vec
 
+
 class MHAPyTorchScaledDotProduct(nn.Module):
-    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False):
+    def __init__(
+        self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False
+    ):
         super().__init__()
 
         assert d_out % num_heads == 0, "d_out is indivisible by num_heads"
@@ -152,13 +157,18 @@ class MHAPyTorchScaledDotProduct(nn.Module):
         # (3, b, num_heads, num_tokens, head_dim) -> 3 times (b, num_heads, num_tokens, head_dim)
         queries, keys, values = qkv
 
-        use_dropout = 0. if not self.training else self.dropout
+        use_dropout = 0.0 if not self.training else self.dropout
 
         context_vec = nn.functional.scaled_dot_product_attention(
-            queries, keys, values, attn_mask=None, dropout_p=use_dropout, is_causal=True)
+            queries, keys, values, attn_mask=None, dropout_p=use_dropout, is_causal=True
+        )
 
         # Combine heads, where self.d_out = self.num_heads * self.head_dim
-        context_vec = context_vec.transpose(1, 2).contiguous().view(batch_size, num_tokens, self.d_out)
+        context_vec = (
+            context_vec.transpose(1, 2)
+            .contiguous()
+            .view(batch_size, num_tokens, self.d_out)
+        )
 
         context_vec = self.proj(context_vec)
 
