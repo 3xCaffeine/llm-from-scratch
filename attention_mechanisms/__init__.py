@@ -1,0 +1,1 @@
+from .multi_head_attn_impl import MHAPyTorchScaledDotProduct as MultiHeadAttention
