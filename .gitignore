@@ -9,3 +9,5 @@ wheels/
 # Virtual environments
 .venv
 working_with_text_data/bytepair-enc/gpt2
+model*.pth
+*.png
