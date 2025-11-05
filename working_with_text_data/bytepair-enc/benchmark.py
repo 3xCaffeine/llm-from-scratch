@@ -11,8 +11,6 @@ def _():
     import os
     import timeit
     import statistics
-    import sys
-    sys.path.insert(0, os.path.dirname(__file__))
     from transformers import AutoTokenizer, GPT2TokenizerFast
     from minbpe import GPT4Tokenizer
     return (

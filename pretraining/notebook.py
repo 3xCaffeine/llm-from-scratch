@@ -8,12 +8,18 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
     import torch
-    from gpt_model import GPTModel, create_dataloader_v1
     import tiktoken
     import os
     import time
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
+    
+    # Setup project imports
+    from utils import setup_project_imports
+    setup_project_imports()
+    
+    from gpt_model import GPTModel, create_dataloader_v1
+    
     return (
         GPTModel,
         MaxNLocator,

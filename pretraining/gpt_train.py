@@ -3,13 +3,14 @@
 import matplotlib.pyplot as plt
 import os
 import requests
-import sys
 import torch
 import tiktoken
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+# Setup project imports
+from utils import setup_project_imports
+setup_project_imports()
 
-from gpt_model import GPTModel, create_dataloader_v1
+from gpt_model import GPTModel, create_dataloader_v1  # noqa: E402
 
 
 def generate_text_simple(model, idx, max_new_tokens, context_size):
