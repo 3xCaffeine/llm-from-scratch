@@ -97,10 +97,88 @@ def load_gpt2_params(model_size, models_dir="gpt2-weights"):
 def assign(left, right):
     if left.shape != right.shape:
         raise ValueError(f"Shape mismatch. Left: {left.shape}, Right: {right.shape}")
-    return torch.nn.Parameter(torch.tensor(right))
+    # Create tensor on same device and dtype as left parameter
+    return torch.nn.Parameter(
+        torch.as_tensor(right, dtype=left.dtype, device=left.device)
+    )
 
 
 def load_weights_into_gpt(gpt, params):
+    """Load GPT-2 weights into model. Auto-detects architecture (combined qkv vs separate)."""
+    # Detect if model uses combined qkv or separate W_query, W_key, W_value
+    has_combined_qkv = hasattr(gpt.trf_blocks[0].att, 'qkv')
+    
+    if has_combined_qkv:
+        _load_weights_combined_qkv(gpt, params)
+    else:
+        _load_weights_separate_qkv(gpt, params)
+
+
+def _load_weights_combined_qkv(gpt, params):
+    """Load weights for models with combined qkv linear layer (like gpt.py)."""
+    gpt.pos_emb.weight = assign(gpt.pos_emb.weight, params["wpe"])
+    gpt.tok_emb.weight = assign(gpt.tok_emb.weight, params["wte"])
+
+    for b in range(len(params["blocks"])):
+        # Combined qkv weight and bias
+        qkv_w = params["blocks"][b]["attn"]["c_attn"]["w"]  # (emb_dim, 3*emb_dim)
+        gpt.trf_blocks[b].att.qkv.weight = assign(
+            gpt.trf_blocks[b].att.qkv.weight, qkv_w.T
+        )
+        qkv_b = params["blocks"][b]["attn"]["c_attn"]["b"]  # (3*emb_dim,)
+        gpt.trf_blocks[b].att.qkv.bias = assign(
+            gpt.trf_blocks[b].att.qkv.bias, qkv_b
+        )
+
+        # Output projection
+        gpt.trf_blocks[b].att.proj.weight = assign(
+            gpt.trf_blocks[b].att.proj.weight,
+            params["blocks"][b]["attn"]["c_proj"]["w"].T,
+        )
+        gpt.trf_blocks[b].att.proj.bias = assign(
+            gpt.trf_blocks[b].att.proj.bias,
+            params["blocks"][b]["attn"]["c_proj"]["b"],
+        )
+
+        # MLP layers
+        gpt.trf_blocks[b].ff.layers[0].weight = assign(
+            gpt.trf_blocks[b].ff.layers[0].weight,
+            params["blocks"][b]["mlp"]["c_fc"]["w"].T,
+        )
+        gpt.trf_blocks[b].ff.layers[0].bias = assign(
+            gpt.trf_blocks[b].ff.layers[0].bias, params["blocks"][b]["mlp"]["c_fc"]["b"]
+        )
+        gpt.trf_blocks[b].ff.layers[2].weight = assign(
+            gpt.trf_blocks[b].ff.layers[2].weight,
+            params["blocks"][b]["mlp"]["c_proj"]["w"].T,
+        )
+        gpt.trf_blocks[b].ff.layers[2].bias = assign(
+            gpt.trf_blocks[b].ff.layers[2].bias,
+            params["blocks"][b]["mlp"]["c_proj"]["b"],
+        )
+
+        # Layer norms
+        gpt.trf_blocks[b].norm1.scale = assign(
+            gpt.trf_blocks[b].norm1.scale, params["blocks"][b]["ln_1"]["g"]
+        )
+        gpt.trf_blocks[b].norm1.shift = assign(
+            gpt.trf_blocks[b].norm1.shift, params["blocks"][b]["ln_1"]["b"]
+        )
+        gpt.trf_blocks[b].norm2.scale = assign(
+            gpt.trf_blocks[b].norm2.scale, params["blocks"][b]["ln_2"]["g"]
+        )
+        gpt.trf_blocks[b].norm2.shift = assign(
+            gpt.trf_blocks[b].norm2.shift, params["blocks"][b]["ln_2"]["b"]
+        )
+
+    # Final layer norm and output head
+    gpt.final_norm.scale = assign(gpt.final_norm.scale, params["g"])
+    gpt.final_norm.shift = assign(gpt.final_norm.shift, params["b"])
+    gpt.out_head.weight = assign(gpt.out_head.weight, params["wte"])
+
+
+def _load_weights_separate_qkv(gpt, params):
+    """Load weights for models with separate W_query, W_key, W_value (like gpt_swa.py, gpt_gqa.py)."""
     gpt.pos_emb.weight = assign(gpt.pos_emb.weight, params["wpe"])
     gpt.tok_emb.weight = assign(gpt.tok_emb.weight, params["wte"])
 
