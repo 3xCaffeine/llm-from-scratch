@@ -13,3 +13,5 @@ model*.pth
 *.png
 
 gpt2-weights/
+
+*.parquet
