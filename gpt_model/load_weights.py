@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-from gpt_model import GPTModel
 import os
+from gpt_model import GPTModel
 
 
 def load_gpt2_params(model_size, models_dir="gpt2-weights"):
@@ -69,19 +69,11 @@ def load_gpt2_params(model_size, models_dir="gpt2-weights"):
             ].numpy()
 
             params["blocks"][b]["ln_1"] = {}
-            params["blocks"][b]["ln_1"]["g"] = state_dict[
-                f"h.{b}.ln_1.weight"
-            ].numpy()
-            params["blocks"][b]["ln_1"]["b"] = state_dict[
-                f"h.{b}.ln_1.bias"
-            ].numpy()
+            params["blocks"][b]["ln_1"]["g"] = state_dict[f"h.{b}.ln_1.weight"].numpy()
+            params["blocks"][b]["ln_1"]["b"] = state_dict[f"h.{b}.ln_1.bias"].numpy()
             params["blocks"][b]["ln_2"] = {}
-            params["blocks"][b]["ln_2"]["g"] = state_dict[
-                f"h.{b}.ln_2.weight"
-            ].numpy()
-            params["blocks"][b]["ln_2"]["b"] = state_dict[
-                f"h.{b}.ln_2.bias"
-            ].numpy()
+            params["blocks"][b]["ln_2"]["g"] = state_dict[f"h.{b}.ln_2.weight"].numpy()
+            params["blocks"][b]["ln_2"]["b"] = state_dict[f"h.{b}.ln_2.bias"].numpy()
 
         params["g"] = state_dict["ln_f.weight"].numpy()
         params["b"] = state_dict["ln_f.bias"].numpy()
@@ -106,8 +98,8 @@ def assign(left, right):
 def load_weights_into_gpt(gpt, params):
     """Load GPT-2 weights into model. Auto-detects architecture (combined qkv vs separate)."""
     # Detect if model uses combined qkv or separate W_query, W_key, W_value
-    has_combined_qkv = hasattr(gpt.trf_blocks[0].att, 'qkv')
-    
+    has_combined_qkv = hasattr(gpt.trf_blocks[0].att, "qkv")
+
     if has_combined_qkv:
         _load_weights_combined_qkv(gpt, params)
     else:
@@ -126,9 +118,7 @@ def _load_weights_combined_qkv(gpt, params):
             gpt.trf_blocks[b].att.qkv.weight, qkv_w.T
         )
         qkv_b = params["blocks"][b]["attn"]["c_attn"]["b"]  # (3*emb_dim,)
-        gpt.trf_blocks[b].att.qkv.bias = assign(
-            gpt.trf_blocks[b].att.qkv.bias, qkv_b
-        )
+        gpt.trf_blocks[b].att.qkv.bias = assign(gpt.trf_blocks[b].att.qkv.bias, qkv_b)
 
         # Output projection
         gpt.trf_blocks[b].att.proj.weight = assign(

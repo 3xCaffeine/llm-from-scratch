@@ -202,7 +202,106 @@ class GPTModel(nn.Module):
             blk.att.reset_cache()
         self.current_pos = 0
 
+    @classmethod
+    def from_pretrained(cls, model_name):
+        from transformers import GPT2Model
+        
+        # Map model name to size
+        model_size_map = {
+            "gpt2": "124M",
+            "gpt2-medium": "355M",
+            "gpt2-large": "774M",
+            "gpt2-xl": "1558M",
+        }
+        if model_name not in model_size_map:
+            raise ValueError(f"Model name not in {list(model_size_map.keys())}")
+        
+        model_size = model_size_map[model_name]
+        
+        BASE_CONFIG = {
+            "vocab_size": 50257,  # Vocabulary size
+            "context_length": 1024,  # Context length
+            "drop_rate": 0.0,  # Dropout rate
+            "qkv_bias": True,  # Query-key-value bias
+        }
 
+        model_configs = {
+            "124M": {"emb_dim": 768, "n_layers": 12, "n_heads": 12},
+            "355M": {"emb_dim": 1024, "n_layers": 24, "n_heads": 16},
+            "774M": {"emb_dim": 1280, "n_layers": 36, "n_heads": 20},
+            "1558M": {"emb_dim": 1600, "n_layers": 48, "n_heads": 25},
+        }
+
+        BASE_CONFIG.update(model_configs[model_size])
+        
+        model = cls(BASE_CONFIG)
+        
+        # Load from HF
+        hf_model = GPT2Model.from_pretrained(model_name)
+        state_dict = hf_model.state_dict()
+        
+        # Load weights into model
+        from .load_weights import load_weights_into_gpt
+        
+        # Create params dict in the expected format
+        params = {"blocks": [{} for _ in range(hf_model.config.n_layer)]}
+
+        params["wpe"] = state_dict["wpe.weight"].numpy()
+        params["wte"] = state_dict["wte.weight"].numpy()
+
+        for b in range(hf_model.config.n_layer):
+            params["blocks"][b]["attn"] = {}
+            params["blocks"][b]["attn"]["c_attn"] = {}
+            params["blocks"][b]["attn"]["c_attn"]["w"] = state_dict[
+                f"h.{b}.attn.c_attn.weight"
+            ].numpy()
+            params["blocks"][b]["attn"]["c_attn"]["b"] = state_dict[
+                f"h.{b}.attn.c_attn.bias"
+            ].numpy()
+            params["blocks"][b]["attn"]["c_proj"] = {}
+            params["blocks"][b]["attn"]["c_proj"]["w"] = state_dict[
+                f"h.{b}.attn.c_proj.weight"
+            ].numpy()
+            params["blocks"][b]["attn"]["c_proj"]["b"] = state_dict[
+                f"h.{b}.attn.c_proj.bias"
+            ].numpy()
+
+            params["blocks"][b]["mlp"] = {}
+            params["blocks"][b]["mlp"]["c_fc"] = {}
+            params["blocks"][b]["mlp"]["c_fc"]["w"] = state_dict[
+                f"h.{b}.mlp.c_fc.weight"
+            ].numpy()
+            params["blocks"][b]["mlp"]["c_fc"]["b"] = state_dict[
+                f"h.{b}.mlp.c_fc.bias"
+            ].numpy()
+            params["blocks"][b]["mlp"]["c_proj"] = {}
+            params["blocks"][b]["mlp"]["c_proj"]["w"] = state_dict[
+                f"h.{b}.mlp.c_proj.weight"
+            ].numpy()
+            params["blocks"][b]["mlp"]["c_proj"]["b"] = state_dict[
+                f"h.{b}.mlp.c_proj.bias"
+            ].numpy()
+
+            params["blocks"][b]["ln_1"] = {}
+            params["blocks"][b]["ln_1"]["g"] = state_dict[
+                f"h.{b}.ln_1.weight"
+            ].numpy()
+            params["blocks"][b]["ln_1"]["b"] = state_dict[
+                f"h.{b}.ln_1.bias"
+            ].numpy()
+            params["blocks"][b]["ln_2"] = {}
+            params["blocks"][b]["ln_2"]["g"] = state_dict[
+                f"h.{b}.ln_2.weight"
+            ].numpy()
+            params["blocks"][b]["ln_2"]["b"] = state_dict[
+                f"h.{b}.ln_2.bias"
+            ].numpy()
+
+        params["g"] = state_dict["ln_f.weight"].numpy()
+        params["b"] = state_dict["ln_f.bias"].numpy()
+
+        load_weights_into_gpt(model, params)
+        return model
 def generate_text_simple(model, idx, max_new_tokens, context_size):
     # idx is (B, T) array of indices in the current context
     for _ in range(max_new_tokens):

@@ -89,15 +89,17 @@ def test_text_generation():
         print(f"Using device: {device}")
         
         model = GPTModel(GPT_CONFIG_124M)
-        model.to(device)  # Move to device first
-        model.eval()
         
-        # Load pretrained weights AFTER moving to device
-        # (assign function will create tensors on the same device as model params)
+        # Load pretrained weights BEFORE moving to device
+        # (weights are loaded as CPU tensors from numpy arrays)
         print("Loading GPT-2 weights...")
         params = load_gpt2_params("124M", models_dir="gpt2-weights")
         load_weights_into_gpt(model, params)
         print("SUCCESS: Weights loaded into model")
+        
+        # Now move model to device
+        model.to(device)
+        model.eval()
 
         # Initialize tokenizer
         tokenizer = tiktoken.get_encoding("gpt2")
