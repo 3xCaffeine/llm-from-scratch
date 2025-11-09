@@ -1,6 +1,6 @@
 # Utilities
 
-This directory contains shared utilities and helper functions used across LLM from Scratch project. These modules provide common functionality for training, data handling, model management, and project organization.
+This directory contains shared utilities and helper functions used across language model from scratch project. These modules provide common functionality for training, data handling, model management, and project organization.
 
 ## Overview
 

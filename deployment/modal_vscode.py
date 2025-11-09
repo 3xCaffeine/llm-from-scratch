@@ -23,7 +23,7 @@ MEMORY = 32768  # 32 GB
 GPU = "L40S"
 TIMEOUT = 3600  # 1 hour
 VOLUME_NAME = "vscode-modal"
-REPO_URL = "https://github.com/3xCaffeine/llm-from-scratch.git"
+REPO_URL = "https://github.com/3xCaffeine/language-model-scratchbook.git"
 
 # Read SSH public key for authentication
 SSH_KEY_PATH = Path.home() / ".ssh" / "id_rsa.pub"
@@ -109,9 +109,9 @@ def run_vscode(q: modal.Queue):
         os.chmod("/root/.ssh/authorized_keys", 0o600)
 
     # Clone the repository if it doesn't exist
-    repo_dir = "/home/coder/llm-from-scratch"
+    repo_dir = "/home/coder/language-model-scratchbook"
     if not os.path.exists(repo_dir):
-        print("Cloning llm-from-scratch repository...")
+        print("Cloning language-model-scratchbook repository...")
         subprocess.run(
             ["git", "clone", REPO_URL, repo_dir],
             check=True,

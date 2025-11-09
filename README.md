@@ -9,7 +9,7 @@ This project is a deep dive into the inner workings of modern language models, i
 ## Project Structure
 
 ```
-llm-from-scratch/
+language-model-scratchbook/
 ├── attention_mechanisms/     # Various attention implementations
 ├── chat_ui/                # Chainlit web interface for model interaction
 │   └── app.py            # Interactive chat interface with GPT-2 weights

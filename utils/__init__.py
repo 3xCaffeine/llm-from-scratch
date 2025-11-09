@@ -1,4 +1,4 @@
-"""Utility functions for the LLM from Scratch project."""
+"""Utility functions for the language model from scratch project."""
 
 from .import_helper import setup_project_imports
 from .gpt2_download import download_gpt2_weights

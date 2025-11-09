@@ -1,5 +1,5 @@
 """
-Import helper utilities for the LLM from Scratch project.
+Import helper utilities for the language model from scratch project.
 
 This module provides utilities to help scripts import modules from the project
 regardless of where they are run from.

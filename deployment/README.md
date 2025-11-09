@@ -16,7 +16,7 @@ A complete Modal application that launches a VS Code Server with GPU support for
 - VS Code Server: Full-featured web-based IDE accessible via browser
 - SSH Access: Secure shell access for command-line operations
 - Persistent Storage: Uses Modal volumes for workspace persistence
-- Repository Integration: Automatically clones the llm-from-scratch repository
+- Repository Integration: Automatically clones the `language-model-scratchbook` repository
 - Security: Token-based authentication and SSH key support
 
 **Configuration:**
